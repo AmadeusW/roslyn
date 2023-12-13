@@ -5,11 +5,14 @@
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Runtime.Remoting.Messaging;
 using System.Threading;
+using Microsoft.CodeAnalysis.Editor.Implementation.InlineRename;
 using Microsoft.CodeAnalysis.Editor.Shared.Extensions;
 using Microsoft.CodeAnalysis.Editor.Shared.Utilities;
 using Microsoft.CodeAnalysis.EditorFeatures.Lightup;
 using Microsoft.CodeAnalysis.Shared.TestHooks;
+using Microsoft.VisualStudio.Search.UI.PreviewPanel.ViewModels;
 
 namespace Microsoft.CodeAnalysis.InlineRename.UI.SmartRename;
 
@@ -19,7 +22,8 @@ internal sealed class SmartRenameViewModel : INotifyPropertyChanged, IDisposable
 
 #pragma warning disable CS0618 // Editor team use Obsolete attribute to mark potential changing API
     private readonly ISmartRenameSessionWrapper _smartRenameSession;
-#pragma warning restore CS0618 
+    private readonly RenameFlyoutViewModel _baseViewModel;
+#pragma warning restore CS0618
 
     private readonly IThreadingContext _threadingContext;
 
@@ -40,6 +44,24 @@ internal sealed class SmartRenameViewModel : INotifyPropertyChanged, IDisposable
     public string StatusMessage => _smartRenameSession.StatusMessage;
 
     public bool StatusMessageVisibility => _smartRenameSession.StatusMessageVisibility;
+
+    private string currentIdentifierText;
+    public string CurrentIdentifierText
+    {
+        get
+        {
+            return currentIdentifierText;
+        }
+        set
+        {
+            if (currentIdentifierText == value)
+            {
+                return;
+            }
+            currentIdentifierText = value;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CurrentIdentifierText)));
+        }
+    }
 
     private string? _selectedSuggestedName;
 
@@ -64,12 +86,17 @@ internal sealed class SmartRenameViewModel : INotifyPropertyChanged, IDisposable
         IThreadingContext threadingContext,
         IAsynchronousOperationListenerProvider listenerProvider,
 #pragma warning disable CS0618 // Editor team use Obsolete attribute to mark potential changing API
-        ISmartRenameSessionWrapper smartRenameSession)
-#pragma warning restore CS0618
+        ISmartRenameSessionWrapper smartRenameSession,
+#pragma warning restore CS0618,
+        RenameFlyoutViewModel baseViewModel)
     {
         _threadingContext = threadingContext;
         _smartRenameSession = smartRenameSession;
         _smartRenameSession.PropertyChanged += SessionPropertyChanged;
+
+        _baseViewModel = baseViewModel;
+        this.currentIdentifierText = baseViewModel.IdentifierText;
+
         var listener = listenerProvider.GetListener(FeatureAttribute.SmartRename);
 
         var listenerToken = listener.BeginAsyncOperation(nameof(_smartRenameSession.GetSuggestionsAsync));
