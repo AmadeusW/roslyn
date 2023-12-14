@@ -22,7 +22,7 @@ internal sealed class SmartRenameViewModel : INotifyPropertyChanged, IDisposable
 
 #pragma warning disable CS0618 // Editor team use Obsolete attribute to mark potential changing API
     private readonly ISmartRenameSessionWrapper _smartRenameSession;
-    private readonly RenameFlyoutViewModel _baseViewModel;
+    public RenameFlyoutViewModel BaseViewModel { get; }
 #pragma warning restore CS0618
 
     private readonly IThreadingContext _threadingContext;
@@ -94,7 +94,7 @@ internal sealed class SmartRenameViewModel : INotifyPropertyChanged, IDisposable
         _smartRenameSession = smartRenameSession;
         _smartRenameSession.PropertyChanged += SessionPropertyChanged;
 
-        _baseViewModel = baseViewModel;
+        BaseViewModel = baseViewModel;
         this.currentIdentifierText = baseViewModel.IdentifierText;
 
         var listener = listenerProvider.GetListener(FeatureAttribute.SmartRename);

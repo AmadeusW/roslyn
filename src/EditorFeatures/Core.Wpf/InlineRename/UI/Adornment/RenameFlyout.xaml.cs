@@ -33,6 +33,8 @@ namespace Microsoft.CodeAnalysis.Editor.Implementation.InlineRename
         private readonly IAsynchronousOperationListener _listener;
         private readonly IThreadingContext _threadingContext;
 
+        private UIElement CurrentTextBox => _viewModel.SmartRenameViewModel is null ? this.IdentifierTextBox : this.IdentifierTextBox /*TODO: SmartRenameControl.ComboBox*/;
+
         public RenameFlyout(
             RenameFlyoutViewModel viewModel,
             IWpfTextView textView,
@@ -58,6 +60,7 @@ namespace Microsoft.CodeAnalysis.Editor.Implementation.InlineRename
                 // Wait until load to position adornment for space negotiation
                 PositionAdornment();
 
+                // TODO: focus and select whichever IdentifierTextBox or smartRenameControl.ComboBox will have focus
                 IdentifierTextBox.Focus();
                 IdentifierTextBox.Select(_viewModel.StartingSelection.Start, _viewModel.StartingSelection.Length);
                 IdentifierTextBox.SelectionChanged += IdentifierTextBox_SelectionChanged;
@@ -68,6 +71,7 @@ namespace Microsoft.CodeAnalysis.Editor.Implementation.InlineRename
             // If smart rename is available, insert the control after the identifier text box.
             if (viewModel.SmartRenameViewModel is not null)
             {
+                // TODO: hide the identifier text box, because SmartRenameControl now has a ComboBox where user can type the identifer
                 var smartRenameControl = new SmartRenameControl(viewModel.SmartRenameViewModel);
                 var index = MainPanel.Children.IndexOf(IdentifierAndExpandButtonGrid);
                 MainPanel.Children.Insert(index + 1, smartRenameControl);
@@ -197,7 +201,7 @@ namespace Microsoft.CodeAnalysis.Editor.Implementation.InlineRename
                     // loop focus back to the first item that is focusable.
                     FrameworkElement lastItem = _viewModel.IsExpanded
                         ? FileRenameCheckbox
-                        : IdentifierTextBox;
+                        : CurrentTextBox;
 
                     if (lastItem.IsFocused)
                     {
@@ -211,7 +215,7 @@ namespace Microsoft.CodeAnalysis.Editor.Implementation.InlineRename
 
         private void IdentifierTextBox_GotFocus(object sender, RoutedEventArgs e)
         {
-            IdentifierTextBox.SelectAll();
+            CurrentTextBox.SelectAll();
         }
 
         private void Adornment_ConsumeMouseEvent(object sender, MouseButtonEventArgs e)
@@ -226,7 +230,7 @@ namespace Microsoft.CodeAnalysis.Editor.Implementation.InlineRename
                 return;
             }
 
-            IdentifierTextBox.Focus();
+            CurrentTextBox.Focus();
             e.Handled = true;
         }
 
@@ -235,6 +239,7 @@ namespace Microsoft.CodeAnalysis.Editor.Implementation.InlineRename
             _viewModel.IsExpanded = !_viewModel.IsExpanded;
         }
 
+        // TODO: refactor the following to use CurrentTextBox
         /// <summary>
         /// Respond to selection/cursor changes in the textbox the user is editing by
         /// applying the same selection to the textview that initiated the command
